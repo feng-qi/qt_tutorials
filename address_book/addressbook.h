@@ -1,4 +1,10 @@
+#ifndef ADDRESSBOOK_H
+#define ADDRESSBOOK_H
+
+
+#include <QWidget>
 #include <QtGui>
+#include <QMap>
 
 class AddressBook : public QWidget
 {
@@ -6,6 +12,7 @@ class AddressBook : public QWidget
 
 public:
     AddressBook(QWidget *parent = 0);
+    enum Mode { NavigationMode, AddingMode, EditingMode };
 
 public slots:
     void addContact();
@@ -13,8 +20,12 @@ public slots:
     void cancel();
     void next();
     void previous();
+    void editContact();
+    void removeContact();
 
 private:
+    void updateInterface(Mode mode);
+
     QLineEdit   *nameLine;
     QTextEdit   *addressText;
     QPushButton *addButton;
@@ -22,8 +33,15 @@ private:
     QPushButton *cancelButton;
     QPushButton *nextButton;
     QPushButton *previousButton;
+    QPushButton *editButton;
+    QPushButton *removeButton;
+
+    Mode currentMode;
 
     QMap<QString, QString> contacts;
     QString oldName;
     QString oldAddress;
 };
+
+
+#endif /* ADDRESSBOOK_H */
