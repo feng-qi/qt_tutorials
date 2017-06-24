@@ -25,6 +25,10 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     editButton->setEnabled(false);
     removeButton = new QPushButton(tr("&Remove"));
     removeButton->setEnabled(false);
+    findButton = new QPushButton(tr("&Find"));
+    findButton->setEnabled(false);
+
+    dialog = new FindDialog;
 
     connect(addButton, SIGNAL(clicked()), this, SLOT(addContact()));
     connect(submitButton, SIGNAL(clicked()), this, SLOT(submitContact()));
@@ -33,6 +37,7 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     connect(previousButton, SIGNAL(clicked()), this, SLOT(previous()));
     connect(editButton, SIGNAL(clicked()), this, SLOT(editContact()));
     connect(removeButton, SIGNAL(clicked()), this, SLOT(removeContact()));
+    connect(findButton, SIGNAL(clicked()), this, SLOT(findContact()));
 
     QVBoxLayout *buttonLayout1 = new QVBoxLayout;
     buttonLayout1->addWidget(addButton, Qt::AlignTop);
@@ -40,6 +45,7 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     buttonLayout1->addWidget(cancelButton);
     buttonLayout1->addWidget(editButton);
     buttonLayout1->addWidget(removeButton);
+    buttonLayout1->addWidget(findButton);
     buttonLayout1->addStretch();
 
     QHBoxLayout *buttonLayout2 = new QHBoxLayout;
@@ -56,6 +62,26 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
 
     setLayout(mainLayout);
     setWindowTitle(tr("Simple Address Book"));
+}
+
+void AddressBook::findContact()
+{
+    dialog->show();
+
+    if (dialog->exec() == QDialog::Accepted) {
+        QString contactName = dialog->getFindText();
+
+        if (contacts.contains(contactName)) {
+            nameLine->setText(contactName);
+            addressText->setText(contacts.value(contactName));
+        } else {
+            QMessageBox::information(this, tr("Contact Not Fount"),
+                                     tr("Sorry, \"%1\" is not in your address book.").arg(contactName));
+            return;
+        }
+    }
+
+    updateInterface(NavigationMode);
 }
 
 void AddressBook::addContact()
@@ -218,6 +244,7 @@ void AddressBook::updateInterface(Mode mode)
         removeButton->setEnabled(number >= 1);
         nextButton->setEnabled(number > 1);
         previousButton->setEnabled(number > 1);
+        findButton->setEnabled(number > 2);
 
         submitButton->hide();
         cancelButton->hide();

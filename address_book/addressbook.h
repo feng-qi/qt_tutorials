@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <QtGui>
 #include <QMap>
+#include "finddialog.h"
 
 class AddressBook : public QWidget
 {
@@ -22,6 +23,7 @@ public slots:
     void previous();
     void editContact();
     void removeContact();
+    void findContact();
 
 private:
     void updateInterface(Mode mode);
@@ -35,6 +37,8 @@ private:
     QPushButton *previousButton;
     QPushButton *editButton;
     QPushButton *removeButton;
+    QPushButton *findButton;
+    FindDialog  *dialog;
 
     Mode currentMode;
 
