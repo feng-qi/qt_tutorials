@@ -24,6 +24,8 @@ public slots:
     void editContact();
     void removeContact();
     void findContact();
+    void saveToFile();
+    void loadFromFile();
 
 private:
     void updateInterface(Mode mode);
@@ -39,6 +41,8 @@ private:
     QPushButton *removeButton;
     QPushButton *findButton;
     FindDialog  *dialog;
+    QPushButton *loadButton;
+    QPushButton *saveButton;
 
     Mode currentMode;
 

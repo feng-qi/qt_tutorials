@@ -27,6 +27,10 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     removeButton->setEnabled(false);
     findButton = new QPushButton(tr("&Find"));
     findButton->setEnabled(false);
+    loadButton = new QPushButton(tr("Load..."));
+    loadButton->setToolTip(tr("Load contacts from a file"));
+    saveButton = new QPushButton(tr("Save..."));
+    saveButton->setToolTip(tr("Save contacts to a file"));
 
     dialog = new FindDialog;
 
@@ -38,6 +42,8 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     connect(editButton, SIGNAL(clicked()), this, SLOT(editContact()));
     connect(removeButton, SIGNAL(clicked()), this, SLOT(removeContact()));
     connect(findButton, SIGNAL(clicked()), this, SLOT(findContact()));
+    connect(loadButton, SIGNAL(clicked()), this, SLOT(loadFromFile()));
+    connect(saveButton, SIGNAL(clicked()), this, SLOT(saveToFile()));
 
     QVBoxLayout *buttonLayout1 = new QVBoxLayout;
     buttonLayout1->addWidget(addButton, Qt::AlignTop);
@@ -46,6 +52,8 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     buttonLayout1->addWidget(editButton);
     buttonLayout1->addWidget(removeButton);
     buttonLayout1->addWidget(findButton);
+    buttonLayout1->addWidget(loadButton);
+    buttonLayout1->addWidget(saveButton);
     buttonLayout1->addStretch();
 
     QHBoxLayout *buttonLayout2 = new QHBoxLayout;
@@ -62,6 +70,59 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
 
     setLayout(mainLayout);
     setWindowTitle(tr("Simple Address Book"));
+}
+
+void AddressBook::saveToFile()
+{
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Save Address Book"), "",
+                                                    tr("Address Book (*.abk);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+    else {
+        QFile file(fileName);
+        if (!file.open(QIODevice::WriteOnly)) {
+            QMessageBox::information(this, tr("Unable to open file"),
+                                     file.errorString());
+            return;
+        }
+        QDataStream out(&file);
+        out.setVersion(QDataStream::Qt_4_5);
+        out << contacts;
+    }
+}
+
+void AddressBook::loadFromFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,
+                                                    tr("Open Address Book"), "",
+                                                    tr("Address Book (*.abk);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+    else {
+        QFile file(fileName);
+
+        if (!file.open(QIODevice::ReadOnly)) {
+            QMessageBox::information(this, tr("Unable to open file"),
+                                     file.errorString());
+            return;
+        }
+
+        QDataStream in(&file);
+        in.setVersion(QDataStream::Qt_4_5);
+        contacts.empty();
+        in >> contacts;
+
+        if (contacts.isEmpty()) {
+            QMessageBox::information(this, tr("No contacts in file"),
+                                     tr("The file you are attempting to open contains no contacts"));
+        } else {
+            QMap<QString, QString>::iterator i = contacts.begin();
+            nameLine->setText(i.key());
+            addressText->setText(i.value());
+        }
+    }
+    updateInterface(NavigationMode);
 }
 
 void AddressBook::findContact()
@@ -228,7 +289,11 @@ void AddressBook::updateInterface(Mode mode)
 
         submitButton->show();
         cancelButton->show();
+
+        loadButton->setEnabled(false);
+        saveButton->setEnabled(false);
         break;
+
     case NavigationMode:
         if (contacts.isEmpty()) {
             nameLine->clear();
@@ -248,6 +313,10 @@ void AddressBook::updateInterface(Mode mode)
 
         submitButton->hide();
         cancelButton->hide();
+
+        loadButton->setEnabled(true);
+        saveButton->setEnabled(number >= 1);
+
         break;
     }
 }
