@@ -27,23 +27,25 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     removeButton->setEnabled(false);
     findButton = new QPushButton(tr("&Find"));
     findButton->setEnabled(false);
-    loadButton = new QPushButton(tr("Load..."));
+    loadButton = new QPushButton(tr("&Load..."));
     loadButton->setToolTip(tr("Load contacts from a file"));
-    saveButton = new QPushButton(tr("Save..."));
+    saveButton = new QPushButton(tr("Sa&ve..."));
     saveButton->setToolTip(tr("Save contacts to a file"));
+    exportButton = new QPushButton(tr("E&xport"));
 
     dialog = new FindDialog;
 
-    connect(addButton, SIGNAL(clicked()), this, SLOT(addContact()));
-    connect(submitButton, SIGNAL(clicked()), this, SLOT(submitContact()));
-    connect(cancelButton, SIGNAL(clicked()), this, SLOT(cancel()));
-    connect(nextButton, SIGNAL(clicked()), this, SLOT(next()));
+    connect(addButton,      SIGNAL(clicked()), this, SLOT(addContact()));
+    connect(submitButton,   SIGNAL(clicked()), this, SLOT(submitContact()));
+    connect(cancelButton,   SIGNAL(clicked()), this, SLOT(cancel()));
+    connect(nextButton,     SIGNAL(clicked()), this, SLOT(next()));
     connect(previousButton, SIGNAL(clicked()), this, SLOT(previous()));
-    connect(editButton, SIGNAL(clicked()), this, SLOT(editContact()));
-    connect(removeButton, SIGNAL(clicked()), this, SLOT(removeContact()));
-    connect(findButton, SIGNAL(clicked()), this, SLOT(findContact()));
-    connect(loadButton, SIGNAL(clicked()), this, SLOT(loadFromFile()));
-    connect(saveButton, SIGNAL(clicked()), this, SLOT(saveToFile()));
+    connect(editButton,     SIGNAL(clicked()), this, SLOT(editContact()));
+    connect(removeButton,   SIGNAL(clicked()), this, SLOT(removeContact()));
+    connect(findButton,     SIGNAL(clicked()), this, SLOT(findContact()));
+    connect(loadButton,     SIGNAL(clicked()), this, SLOT(loadFromFile()));
+    connect(saveButton,     SIGNAL(clicked()), this, SLOT(saveToFile()));
+    connect(exportButton,   SIGNAL(clicked()), this, SLOT(exportAsVCard()));
 
     QVBoxLayout *buttonLayout1 = new QVBoxLayout;
     buttonLayout1->addWidget(addButton, Qt::AlignTop);
@@ -54,6 +56,7 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
     buttonLayout1->addWidget(findButton);
     buttonLayout1->addWidget(loadButton);
     buttonLayout1->addWidget(saveButton);
+    buttonLayout1->addWidget(exportButton);
     buttonLayout1->addStretch();
 
     QHBoxLayout *buttonLayout2 = new QHBoxLayout;
@@ -70,6 +73,61 @@ AddressBook::AddressBook(QWidget *parent) : QWidget(parent)
 
     setLayout(mainLayout);
     setWindowTitle(tr("Simple Address Book"));
+}
+
+void AddressBook::exportAsVCard()
+{
+    QString name = nameLine->text();
+    QString address = addressText->toPlainText();
+    QString firstName;
+    QString lastName;
+    QStringList nameList;
+
+    int index = name.indexOf(" ");
+
+    if (index != -1) {
+        nameList = name.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        firstName = nameList.first();
+        lastName = nameList.last();
+    } else {
+        firstName = name;
+        lastName = "";
+    }
+
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    tr("Export Contact"), "",
+                                                    tr("vCard Files (*.vcf);;All Files (*)"));
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::information(this, tr("Unable to open file"),
+                                 file.errorString());
+        return;
+    }
+
+    QTextStream out(&file);
+
+    out << "BEGIN:VCARD" << "\n";
+    out << "VERSION:2.1" << "\n";
+    out << "N:" << lastName << ";" << firstName << "\n";
+
+    if (!nameList.isEmpty())
+        out << "FAN:" << nameList.join(" ") << "\n";
+    else
+        out << "FN:" << firstName << "\n";
+
+    address.replace(";", "\\;", Qt::CaseInsensitive);
+    address.replace("\n", ";", Qt::CaseInsensitive);
+    address.replace(",", " ", Qt::CaseInsensitive);
+
+    out << "ADR;HOME:;" << address << "\n";
+    out << "END:VCARD" << "\n";
+
+    QMessageBox::information(this, tr("Export Successful"),
+                             tr("\"%1\" has been exported as a vCard.").arg(name));
 }
 
 void AddressBook::saveToFile()
@@ -292,6 +350,7 @@ void AddressBook::updateInterface(Mode mode)
 
         loadButton->setEnabled(false);
         saveButton->setEnabled(false);
+        exportButton->setEnabled(false);
         break;
 
     case NavigationMode:
@@ -316,6 +375,7 @@ void AddressBook::updateInterface(Mode mode)
 
         loadButton->setEnabled(true);
         saveButton->setEnabled(number >= 1);
+        exportButton->setEnabled(number >= 1);
 
         break;
     }

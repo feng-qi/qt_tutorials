@@ -26,6 +26,7 @@ public slots:
     void findContact();
     void saveToFile();
     void loadFromFile();
+    void exportAsVCard();
 
 private:
     void updateInterface(Mode mode);
@@ -43,6 +44,7 @@ private:
     FindDialog  *dialog;
     QPushButton *loadButton;
     QPushButton *saveButton;
+    QPushButton *exportButton;
 
     Mode currentMode;
 
